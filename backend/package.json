@@ -1,0 +1,45 @@
+{
+  "name": "backend",
+  "module": "server.ts",
+  "scripts": {
+    "dev": "ts-node-dev src/server.ts",
+    "start": "ts-node src/server.ts",
+    "build": "tsc",
+    "serve": "node dist/server.js"
+  },
+  "devDependencies": {
+    "@types/body-parser": "^1.19.5",
+    "@types/compression": "^1.7.5",
+    "@types/cookie-parser": "^1.4.7",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.11.30",
+    "@types/nodemailer": "^6.4.17",
+    "ts-node-dev": "^2.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.2",
+    "compression": "^1.7.4",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^4.19.2",
+    "express-validator": "^7.2.1",
+    "firebase": "^11.10.0",
+    "nodemailer": "^7.0.5",
+    "socket.io": "^4.8.1",
+    "ts-node": "^10.9.2",
+    "twilio": "^5.7.3",
+    "typescript": "^5.0.0"
+  },
+  "version": "1.0.0",
+  "main": "index.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
