@@ -86,13 +86,13 @@ const loginSMS = async (req: express.Request, res: express.Response) => {
       await sendSmsVerificationCode(formatPhoneNumber(phone), accessCode);
 
       return responseHandler.ok(res, {
-        phone: formatPhoneNumber(phone),
         msg: "Verification code sent to your phone",
       });
     }
 
     responseHandler.ok(res, {
       role: user?.role,
+      phone: user?.phone,
       msg: "Login successfully",
     });
   } catch (error) {
