@@ -37,7 +37,7 @@ export const CardWrapper = ({
         {isLogin && (
           <p className="text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link to="/register" onClick={() => {}}>
+            <Link to="/auth/register" onClick={() => {}}>
               <span className="text-sky-700 hover:underline">Sign up</span>
             </Link>
           </p>
@@ -45,14 +45,14 @@ export const CardWrapper = ({
         {isSignup && (
           <p className="text-xs text-muted-foreground">
             Already have an account?{" "}
-            <Link to="/login" onClick={() => {}}>
+            <Link to="/auth/login" onClick={() => {}}>
               <span className="text-sky-700 hover:underline">Sign in</span>
             </Link>
           </p>
         )}
         {isOtp && (
           <p className="text-xs text-muted-foreground">
-            <Link to="/login" onClick={() => {}}>
+            <Link to="/auth/login" onClick={() => {}}>
               <span className="text-sky-700 hover:underline">
                 Back to login
               </span>

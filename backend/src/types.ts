@@ -50,8 +50,7 @@ export interface User {
   created_at: Date;
   updated_at: Date;
   password?: string;
-  access_code: string;
-  code_created_at: Date;
+  status: "active" | "inactive";
 }
 
 export interface Lesson {

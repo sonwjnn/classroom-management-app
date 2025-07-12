@@ -14,7 +14,7 @@ import {
 import { loginSchema } from "@/modules/auth/schema";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useLoginSMS } from "@/modules/auth/api/use-login-sms";
 import {
   InputOTP,
@@ -22,7 +22,6 @@ import {
   InputOTPSeparator,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { Card } from "@/components/ui/card";
 import { CardWrapper } from "./card-wrapper";
 
 export const AuthForm = ({ type }: { type: "login" | "register" | "otp" }) => {
@@ -44,103 +43,108 @@ export const AuthForm = ({ type }: { type: "login" | "register" | "otp" }) => {
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     const response = await loginSMS(values);
     if (response && !response.phone) {
-      navigate("/login?otp=true");
+      navigate("/auth/login?otp=true");
     }
 
-    if (response && response.phone) {
+    if (response && response.phone && response.role) {
       localStorage.setItem("phone", response.phone);
-      navigate("/");
+
+      if (response.role === "student") {
+        navigate("/students");
+      }
+
+      if (response.role === "instructor") {
+        navigate("/instructors");
+      }
     }
   };
 
   return (
-    <div className="bg-[#F4F4F4] h-screen flex items-center justify-center w-full overflow-y-auto">
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2.5">
-          {type === "otp" ? (
-            <CardWrapper
-              headerLabel="Enter the code"
-              headerDescription="Enter the code sent to your phone"
-              type="otp"
-            >
-              <div className="flex items-center justify-center">
-                <FormField
-                  control={form.control}
-                  name="code"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <InputOTP
-                          maxLength={6}
-                          value={field.value}
-                          onChange={(code) => field.onChange(`${code}`)}
-                        >
-                          <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                          </InputOTPGroup>
-                          <InputOTPSeparator />
-                          <InputOTPGroup>
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                          </InputOTPGroup>
-                        </InputOTP>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <Button
-                disabled={signInLoading || !watchCode}
-                type="submit"
-                size="lg"
-                variant="default"
-                className="w-full"
-              >
-                Verify
-              </Button>
-            </CardWrapper>
-          ) : (
-            <CardWrapper
-              headerLabel={
-                type === "login" ? "Login to continue" : "Sign up to continue"
-              }
-              headerDescription="Use your phone number to continue"
-              type={type === "login" ? "login" : "register"}
-            >
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2.5">
+        {type === "otp" ? (
+          <CardWrapper
+            headerLabel="Enter the code"
+            headerDescription="Enter the code sent to your phone"
+            type="otp"
+          >
+            <div className="flex items-center justify-center">
               <FormField
                 control={form.control}
-                name="phone"
+                name="code"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-base">Phone</FormLabel>
                     <FormControl>
-                      <PhoneInput
-                        {...field}
-                        placeholder="Enter phone number"
-                        defaultCountry="US"
-                      />
+                      <InputOTP
+                        maxLength={6}
+                        value={field.value}
+                        onChange={(code) => field.onChange(`${code}`)}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                        </InputOTPGroup>
+                        <InputOTPSeparator />
+                        <InputOTPGroup>
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                      </InputOTP>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button
-                disabled={signInLoading}
-                type="submit"
-                size="lg"
-                variant="default"
-                className="w-full"
-              >
-                Next
-              </Button>
-            </CardWrapper>
-          )}
-        </form>
-      </Form>
-    </div>
+            </div>
+            <Button
+              disabled={signInLoading || !watchCode}
+              type="submit"
+              size="lg"
+              variant="default"
+              className="w-full"
+            >
+              Verify
+            </Button>
+          </CardWrapper>
+        ) : (
+          <CardWrapper
+            headerLabel={
+              type === "login" ? "Login to continue" : "Sign up to continue"
+            }
+            headerDescription="Use your phone number to continue"
+            type={type === "login" ? "login" : "register"}
+          >
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-base">Phone</FormLabel>
+                  <FormControl>
+                    <PhoneInput
+                      {...field}
+                      placeholder="Enter phone number"
+                      defaultCountry="US"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button
+              disabled={signInLoading}
+              type="submit"
+              size="lg"
+              variant="default"
+              className="w-full"
+            >
+              Next
+            </Button>
+          </CardWrapper>
+        )}
+      </form>
+    </Form>
   );
 };

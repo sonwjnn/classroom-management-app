@@ -1,27 +1,18 @@
 import { useMutation } from "@tanstack/react-query";
 import type { LoginRequest, LoginResponse } from "../types";
 import { ENDPOINTS } from "@/modules/endpoints";
+import axios from "axios";
+import { toast } from "sonner";
 
 export const useLoginSMS = () => {
   const mutation = useMutation<LoginResponse, Error, LoginRequest>({
     mutationFn: async (json) => {
-      const response = await fetch(ENDPOINTS.AUTH.LOGIN_SMS, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(json),
-      });
+      const response = await axios.post(ENDPOINTS.AUTH.LOGIN_SMS, json);
 
-      if (!response.ok) {
-        const data = await response.json();
-        if ("error" in data) {
-          throw new Error(data.error);
-        }
-        throw new Error("Something went wrong");
-      }
-
-      return await response.json();
+      return response.data;
+    },
+    onError: () => {
+      return toast.error("Something went wrong");
     },
   });
 

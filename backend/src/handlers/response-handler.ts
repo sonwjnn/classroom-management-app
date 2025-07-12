@@ -30,10 +30,10 @@ const unauthorized = (res: Response) =>
     message: "Unauthorized",
   });
 
-const notfound = (res: Response) =>
-  responseWithData(res, 401, {
-    status: 401,
-    message: "Resource not found!",
+const notfound = (res: Response, message?: string) =>
+  responseWithData(res, 404, {
+    status: 404,
+    message: message || "Resource not found!",
   });
 
 export default {

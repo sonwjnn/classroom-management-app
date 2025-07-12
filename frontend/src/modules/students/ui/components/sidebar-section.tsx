@@ -7,30 +7,28 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 
 const items = [
   {
     title: "Manage Students",
-    url: "/",
+    url: "/students",
     icon: GraduationCap,
   },
   {
     title: "Manage Lessons",
-    url: "/lessons",
+    url: "/students/lessons",
     icon: BookOpenTextIcon,
     auth: true,
   },
   {
     title: "Message",
-    url: "/messages",
+    url: "/students/messages",
     icon: MessageCircle,
   },
 ];
 
 export const SidebarSection = () => {
-  // const { isSignedIn } = useAuth();
-  const navigate = useNavigate();
   const pathname = useLocation().pathname;
 
   return (

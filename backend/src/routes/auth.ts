@@ -12,7 +12,7 @@ export default (): express.Router => {
     requestHandler.validate,
     authController.loginEmail
   );
-  router.post("/register", requestHandler.validate, authController.register);
+  router.get("/get-role", requestHandler.validate, authController.getRole);
 
   return router;
 };

@@ -16,6 +16,7 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { User } from "../types";
+import { v4 as uuidv4 } from "uuid";
 
 const firebaseConfig = {
   apiKey: process.env.FIREBASE_API_KEY,
@@ -39,14 +40,16 @@ export const emailOtpCodesCollection = collection(db, "email_otp_codes");
 // User Operations
 export const createUser = async (userData: Partial<Omit<User, "id">>) => {
   try {
-    const userRef = doc(db, "users", userData.phone || "");
+    const userRef = doc(userCollection);
     await setDoc(userRef, {
+      id: uuidv4(),
       name: userData.name || "",
       email: userData.email || "",
       role: userData.role || "student",
       phone: userData.phone || "",
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
+      status: userData.status || "active",
     });
     return { success: true };
   } catch (error) {
@@ -57,12 +60,34 @@ export const createUser = async (userData: Partial<Omit<User, "id">>) => {
 
 export const getUserByPhone = async (phone: string) => {
   try {
-    const userDoc = await getDoc(doc(db, "users", phone));
-    if (userDoc.exists()) {
-      return { id: userDoc.id, ...userDoc.data() } as User;
+    const userSnapshot = await getDocs(
+      query(userCollection, where("phone", "==", phone))
+    );
+
+    if (userSnapshot.empty) {
+      return null;
     }
 
-    return null;
+    const user = userSnapshot.docs[0]?.data() as User;
+    return user;
+  } catch (error) {
+    console.error("Error getting user:", error);
+    throw error;
+  }
+};
+
+export const getUserByEmail = async (email: string) => {
+  try {
+    const userSnapshot = await getDocs(
+      query(userCollection, where("email", "==", email))
+    );
+
+    if (userSnapshot.empty) {
+      return null;
+    }
+
+    const user = userSnapshot.docs[0]?.data() as User;
+    return user;
   } catch (error) {
     console.error("Error getting user:", error);
     throw error;
@@ -71,7 +96,7 @@ export const getUserByPhone = async (phone: string) => {
 
 export const updateUser = async (phone: string, updates: Partial<User>) => {
   try {
-    const userRef = doc(db, "users", phone);
+    const userRef = doc(userCollection, phone);
     await updateDoc(userRef, {
       ...updates,
       updated_at: serverTimestamp(),
@@ -85,7 +110,8 @@ export const updateUser = async (phone: string, updates: Partial<User>) => {
 
 export const deleteUser = async (phone: string) => {
   try {
-    await deleteDoc(doc(db, "users", phone));
+    const userRef = doc(userCollection, phone);
+    await deleteDoc(userRef);
     return { success: true };
   } catch (error) {
     console.error("Error deleting user:", error);
@@ -95,7 +121,7 @@ export const deleteUser = async (phone: string) => {
 
 export const getAllStudents = async () => {
   try {
-    const q = query(collection(db, "users"), where("role", "==", "student"));
+    const q = query(userCollection, where("role", "==", "student"));
 
     const studentsSnapshot = await getDocs(q);
     const students: any[] = [];

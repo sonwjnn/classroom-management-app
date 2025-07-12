@@ -26,7 +26,7 @@ export default (): express.Router => {
     requestHandler.validate,
     instructorController.getStudentWithLessonsByPhone
   );
-  router.put(
+  router.patch(
     "/edit-student/:phone",
     requestHandler.validate,
     instructorController.editStudentByPhone

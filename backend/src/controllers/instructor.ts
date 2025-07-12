@@ -6,6 +6,7 @@ import {
   deleteUser,
   getAllStudents as getAllStudentsFirebase,
   getLessonsByStudent,
+  getUserByEmail,
   getUserByPhone,
   updateUser,
 } from "../lib/firebase";
@@ -16,6 +17,7 @@ import {
 } from "../lib/mail";
 import { validatePhoneNumber } from "../lib/twilio";
 import { User } from "../types";
+import { formatPhoneNumber } from "../utils";
 
 const addStudent = async (req: express.Request, res: express.Response) => {
   try {
@@ -36,6 +38,14 @@ const addStudent = async (req: express.Request, res: express.Response) => {
       return responseHandler.badrequest(res, "Invalid phone number format");
     }
 
+    const existingEmailUser = await getUserByEmail(email);
+    if (existingEmailUser) {
+      return responseHandler.badrequest(
+        res,
+        "Student with this email already exists"
+      );
+    }
+
     const existingUser = await getUserByPhone(phone);
     if (existingUser) {
       return responseHandler.badrequest(
@@ -51,8 +61,7 @@ const addStudent = async (req: express.Request, res: express.Response) => {
       role: "student",
       created_at: new Date(),
       updated_at: new Date(),
-      access_code: "",
-      code_created_at: new Date(),
+      status: "active",
     };
 
     await createUser(studentData);
@@ -130,6 +139,21 @@ const assignLesson = async (req: express.Request, res: express.Response) => {
 
 const getAllStudents = async (req: express.Request, res: express.Response) => {
   try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return responseHandler.badrequest(res, "Phone number is required");
+    }
+
+    const user = await getUserByPhone(phone as string);
+    if (!user) {
+      return responseHandler.notfound(res);
+    }
+
+    if (user.role !== "instructor") {
+      return responseHandler.badrequest(res, "User is not an instructor");
+    }
+
     const students = await getAllStudentsFirebase();
 
     const sanitizedStudents = students.map((student) => ({
@@ -138,6 +162,7 @@ const getAllStudents = async (req: express.Request, res: express.Response) => {
       phone: student.phone,
       email: student.email,
       role: student.role,
+      status: student.status,
       created_at: student.created_at,
       updated_at: student.updated_at,
     }));
@@ -191,12 +216,12 @@ const editStudentByPhone = async (
 ) => {
   try {
     const { phone } = req.params;
-    const { name, email } = req.body;
+    const { name, email, newPhone } = req.body;
 
-    if (!name && !email) {
+    if (!name && !email && !newPhone) {
       return responseHandler.badrequest(
         res,
-        "At least one field (name or email) is required"
+        "At least one field (name or email or newPhone) is required"
       );
     }
 
@@ -209,13 +234,39 @@ const editStudentByPhone = async (
       return responseHandler.badrequest(res, "User is not a student");
     }
 
-    const updates: { name?: string; email?: string } = {};
-    if (name) updates.name = name;
-    if (email) {
+    const updates: { name?: string; email?: string; phone?: string } = {};
+
+    if (name !== student.name) updates.name = name;
+    if (email !== student.email) {
       if (!validateEmail(email)) {
         return responseHandler.badrequest(res, "Invalid email format");
       }
+
+      const existingEmailUser = await getUserByEmail(email);
+      if (existingEmailUser) {
+        return responseHandler.badrequest(
+          res,
+          "Student with this email already exists"
+        );
+      }
+
       updates.email = email;
+    }
+
+    if (newPhone !== student.phone) {
+      if (!validatePhoneNumber(newPhone)) {
+        return responseHandler.badrequest(res, "Invalid phone number format");
+      }
+
+      const existingPhoneUser = await getUserByPhone(newPhone);
+      if (existingPhoneUser) {
+        return responseHandler.badrequest(
+          res,
+          "Student with this phone number already exists"
+        );
+      }
+
+      updates.phone = newPhone;
     }
 
     await updateUser(phone, updates);
@@ -247,7 +298,11 @@ const deleteStudentByPhone = async (
     }
 
     // Delete student
-    await deleteUser(phone);
+    const result = await deleteUser(phone);
+
+    if (!result.success) {
+      return responseHandler.error(res, "Failed to delete student");
+    }
 
     // TODO: Also delete associated lessons and messages
 

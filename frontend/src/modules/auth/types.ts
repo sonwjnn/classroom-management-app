@@ -1,5 +1,6 @@
 export type LoginResponse = {
   phone?: string;
+  role?: "student" | "instructor";
 };
 
 export type LoginRequest = {

@@ -134,7 +134,7 @@ const getStudentProfile = async (
       return responseHandler.badrequest(res, "Phone number is required");
     }
 
-    const student = await getUserByPhone(formatPhoneNumber(phone));
+    const student = await getUserByPhone(phone);
 
     if (!student) {
       return responseHandler.notfound(res);

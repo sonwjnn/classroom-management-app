@@ -24,7 +24,7 @@ const loginSMS = async (req: express.Request, res: express.Response) => {
     const { phone, code } = req.body;
 
     if (!phone) {
-      return responseHandler.notfound(res);
+      return responseHandler.badrequest(res, "Phone number is required");
     }
 
     if (!validatePhoneNumber(phone)) {
@@ -32,36 +32,17 @@ const loginSMS = async (req: express.Request, res: express.Response) => {
     }
 
     const userSnapshot = await getDocs(
-      query(
-        collection(db, "users"),
-        where("phone", "==", formatPhoneNumber(phone))
-      )
+      query(collection(db, "users"), where("phone", "==", phone))
     );
 
-    let user = userSnapshot.docs[0]?.data();
     if (userSnapshot.empty) {
-      const userData: Omit<User, "id"> = {
-        name: "",
-        email: "",
-        role: "student",
-        phone,
-        created_at: new Date(),
-        updated_at: new Date(),
-        access_code: "",
-        code_created_at: new Date(),
-      };
-
-      const result = await createUser(userData);
-
-      if (!result.success) {
-        return responseHandler.badrequest(res, "Failed to create user");
-      }
-
-      user = userData;
+      return responseHandler.notfound(res, "User not found");
     }
 
+    const user = userSnapshot.docs[0]?.data() as User;
+
     if (code) {
-      const result = await validateSmsOTPCode(formatPhoneNumber(phone), code);
+      const result = await validateSmsOTPCode(phone, code);
 
       if (!result.success) {
         return responseHandler.badrequest(
@@ -70,20 +51,17 @@ const loginSMS = async (req: express.Request, res: express.Response) => {
         );
       }
 
-      await deleteSmsOTPCode(formatPhoneNumber(phone));
+      await deleteSmsOTPCode(phone);
     } else {
       const accessCode = generateAccessCode();
 
-      const success = await saveSmsOTPCode(
-        formatPhoneNumber(phone),
-        accessCode
-      );
+      const success = await saveSmsOTPCode(phone, accessCode);
 
       if (!success) {
         return responseHandler.badrequest(res, "Failed to save access code");
       }
 
-      await sendSmsVerificationCode(formatPhoneNumber(phone), accessCode);
+      await sendSmsVerificationCode(phone, accessCode);
 
       return responseHandler.ok(res, {
         msg: "Verification code sent to your phone",
@@ -119,7 +97,7 @@ const loginEmail = async (req: express.Request, res: express.Response) => {
 
     let user = userSnapshot.docs[0]?.data() as User;
     if (userSnapshot.empty) {
-      return responseHandler.notfound(res);
+      return responseHandler.notfound(res, "User not found");
     }
 
     if (!user.password) {
@@ -193,8 +171,7 @@ const register = async (req: express.Request, res: express.Response) => {
       role: "student",
       created_at: new Date(),
       updated_at: new Date(),
-      access_code: "",
-      code_created_at: new Date(),
+      status: "active",
     };
 
     await createUser(userData);
@@ -210,8 +187,31 @@ const register = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const getRole = async (req: express.Request, res: express.Response) => {
+  try {
+    const { phone } = req.query;
+
+    if (!phone) {
+      return responseHandler.badrequest(res, "Phone number is required");
+    }
+
+    const user = await getUserByPhone(phone as string);
+    if (!user) {
+      return responseHandler.notfound(res);
+    }
+
+    responseHandler.ok(res, {
+      role: user?.role,
+    });
+  } catch (error) {
+    console.error("Error getting role:", error);
+    responseHandler.error(res);
+  }
+};
+
 export default {
   loginSMS,
   loginEmail,
   register,
+  getRole,
 };
