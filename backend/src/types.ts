@@ -46,6 +46,7 @@ export interface User {
   name: string;
   email?: string;
   phone: string;
+  instructor_phone: string;
   role: "student" | "instructor";
   created_at: Date;
   updated_at: Date;
@@ -57,11 +58,22 @@ export interface Lesson {
   id: string;
   title: string;
   description: string;
-  instructor_phone: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  assigned_students?: StudentLesson[];
+}
+
+export interface StudentLesson {
+  id: string;
+  lesson_id: string;
+  student_id: string;
+  student_name: string;
+  student_email: string;
   student_phone: string;
-  status: "assigned" | "completed";
-  created_at: Date;
-  completed_at: Date;
+  status: "assigned" | "in_progress" | "completed";
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Message {

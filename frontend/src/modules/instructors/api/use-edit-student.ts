@@ -1,15 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { UpdateStudentRequest, Student } from "../types";
 import { ENDPOINTS } from "@/modules/endpoints";
-import axios from "axios";
 import { toast } from "sonner";
+import privateClient from "@/lib/client/private-client";
 
 export const useEditStudent = ({ phone }: { phone: string }) => {
   const queryClient = useQueryClient();
 
   const mutation = useMutation<Student, Error, UpdateStudentRequest>({
     mutationFn: async (json) => {
-      const response = await axios.patch(
+      const response = await privateClient.patch(
         ENDPOINTS.INSTRUCTOR.UPDATE_STUDENT(phone),
         json
       );

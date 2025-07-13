@@ -11,13 +11,13 @@ import { useLocation, Link } from "react-router-dom";
 
 const items = [
   {
-    title: "Manage Students",
+    title: "My Lessons",
     url: "/students",
     icon: GraduationCap,
   },
   {
-    title: "Manage Lessons",
-    url: "/students/lessons",
+    title: "My Profile",
+    url: "/students/profile",
     icon: BookOpenTextIcon,
     auth: true,
   },

@@ -1,23 +1,20 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { TOKEN_NAME, USER_STORAGE_NAME } from "@/constants";
 import { LogOut, User2, UserCircle } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 export const AuthButton = () => {
   const navigate = useNavigate();
-  const name = "John Doe";
-  const email = "john.doe@example.com";
-  const imageUrl = "https://example.com/john-doe.jpg";
 
   const handleLogout = () => {
-    localStorage.removeItem("phone");
+    localStorage.removeItem(TOKEN_NAME);
+    localStorage.removeItem(USER_STORAGE_NAME);
     navigate("/auth/login");
   };
 
@@ -25,7 +22,6 @@ export const AuthButton = () => {
     <DropdownMenu>
       <DropdownMenuTrigger className="outline-none border-none ">
         <Avatar className="size-10 cursor-pointer ring-offset-background transition hover:ring-primary">
-          <AvatarImage alt={name} src={imageUrl || ""} />
           <AvatarFallback className="flex items-center justify-center bg-sky-500 font-medium text-white">
             <User2 className="size-4 text-white" />
           </AvatarFallback>

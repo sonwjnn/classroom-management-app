@@ -11,11 +11,11 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { loginSchema } from "@/modules/auth/schema";
+import { smsLoginSchema } from "@/modules/auth/schema";
 import PhoneInput from "react-phone-number-input";
-import "react-phone-number-input/style.css";
+
 import { useNavigate } from "react-router-dom";
-import { useLoginSMS } from "@/modules/auth/api/use-login-sms";
+import { useSMSLogin } from "@/modules/auth/api/use-sms-login";
 import {
   InputOTP,
   InputOTPGroup,
@@ -24,14 +24,18 @@ import {
 } from "@/components/ui/input-otp";
 import { CardWrapper } from "./card-wrapper";
 
-export const AuthForm = ({ type }: { type: "login" | "register" | "otp" }) => {
+export const AuthSMSForm = ({
+  type,
+}: {
+  type: "login" | "register" | "otp";
+}) => {
   const navigate = useNavigate();
 
-  const { mutateAsync: loginSMS, isPending: signInLoading } = useLoginSMS();
+  const { mutateAsync: smsLogin, isPending: signInLoading } = useSMSLogin();
 
-  const form = useForm<z.infer<typeof loginSchema>>({
+  const form = useForm<z.infer<typeof smsLoginSchema>>({
     mode: "all",
-    resolver: zodResolver(loginSchema),
+    resolver: zodResolver(smsLoginSchema),
     defaultValues: {
       phone: "",
       code: "",
@@ -40,20 +44,18 @@ export const AuthForm = ({ type }: { type: "login" | "register" | "otp" }) => {
 
   const watchCode = form.watch("code");
 
-  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    const response = await loginSMS(values);
-    if (response && !response.phone) {
-      navigate("/auth/login?otp=true");
+  const onSubmit = async (values: z.infer<typeof smsLoginSchema>) => {
+    const response = await smsLogin(values);
+    if (response && !response.user) {
+      navigate("/auth/login?type=otp");
     }
 
-    if (response && response.phone && response.role) {
-      localStorage.setItem("phone", response.phone);
-
-      if (response.role === "student") {
+    if (response && response.user) {
+      if (response.user.role === "student") {
         navigate("/students");
       }
 
-      if (response.role === "instructor") {
+      if (response.user.role === "instructor") {
         navigate("/instructors");
       }
     }
@@ -121,7 +123,7 @@ export const AuthForm = ({ type }: { type: "login" | "register" | "otp" }) => {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-base">Phone</FormLabel>
+                  <FormLabel>Phone</FormLabel>
                   <FormControl>
                     <PhoneInput
                       {...field}

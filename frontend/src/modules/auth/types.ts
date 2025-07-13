@@ -1,10 +1,22 @@
-export type LoginResponse = {
-  phone?: string;
-  role?: "student" | "instructor";
+export type SMSLoginResponse = {
+  user?: User;
+  accessToken?: string;
 };
 
-export type LoginRequest = {
+export type EmailLoginResponse = {
+  user?: User;
+  accessToken?: string;
+};
+
+export type SMSLoginRequest = {
   phone: string;
+  code?: string;
+};
+
+export type EmailLoginRequest = {
+  email: string;
+  password: string;
+  code?: string;
 };
 
 export type User = {
@@ -16,6 +28,12 @@ export type User = {
   created_at: Date;
   updated_at: Date;
   password?: string;
-  access_code: string;
-  code_created_at: Date;
+};
+
+export type SetupAccountRequest = {
+  token: string;
+  email: string;
+  name: string;
+  phone: string;
+  password: string;
 };

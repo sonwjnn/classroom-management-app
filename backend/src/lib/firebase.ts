@@ -14,6 +14,7 @@ import {
   getDocs,
   serverTimestamp,
   Timestamp,
+  limit,
 } from "firebase/firestore";
 import { User } from "../types";
 import { v4 as uuidv4 } from "uuid";
@@ -36,17 +37,23 @@ export const messageCollection = collection(db, "messages");
 export const lessonCollection = collection(db, "lessons");
 export const smsOtpCodesCollection = collection(db, "sms_otp_codes");
 export const emailOtpCodesCollection = collection(db, "email_otp_codes");
+export const accountSetupTokensCollection = collection(
+  db,
+  "account_setup_tokens"
+);
+export const lessonsCollection = collection(db, "lessons");
+export const studentLessonsCollection = collection(db, "student_lessons");
 
 // User Operations
 export const createUser = async (userData: Partial<Omit<User, "id">>) => {
   try {
-    const userRef = doc(userCollection);
-    await setDoc(userRef, {
+    await setDoc(doc(userCollection), {
       id: uuidv4(),
       name: userData.name || "",
       email: userData.email || "",
       role: userData.role || "student",
       phone: userData.phone || "",
+      instructor_phone: userData.instructor_phone || "",
       created_at: serverTimestamp(),
       updated_at: serverTimestamp(),
       status: userData.status || "active",
@@ -96,7 +103,12 @@ export const getUserByEmail = async (email: string) => {
 
 export const updateUser = async (phone: string, updates: Partial<User>) => {
   try {
-    const userRef = doc(userCollection, phone);
+    const q = query(userCollection, where("phone", "==", phone), limit(1));
+    const userSnapshot = await getDocs(q);
+    if (userSnapshot.empty) {
+      return { success: false, error: "User not found" };
+    }
+    const userRef = doc(userCollection, userSnapshot.docs[0].id);
     await updateDoc(userRef, {
       ...updates,
       updated_at: serverTimestamp(),
@@ -110,7 +122,12 @@ export const updateUser = async (phone: string, updates: Partial<User>) => {
 
 export const deleteUser = async (phone: string) => {
   try {
-    const userRef = doc(userCollection, phone);
+    const q = query(userCollection, where("phone", "==", phone), limit(1));
+    const userSnapshot = await getDocs(q);
+    if (userSnapshot.empty) {
+      return { success: false, error: "User not found" };
+    }
+    const userRef = doc(userCollection, userSnapshot.docs[0].id);
     await deleteDoc(userRef);
     return { success: true };
   } catch (error) {
@@ -119,9 +136,13 @@ export const deleteUser = async (phone: string) => {
   }
 };
 
-export const getAllStudents = async () => {
+export const getAllStudentsByInstructor = async (instructorPhone: string) => {
   try {
-    const q = query(userCollection, where("role", "==", "student"));
+    const q = query(
+      userCollection,
+      where("role", "==", "student"),
+      where("instructor_phone", "==", instructorPhone)
+    );
 
     const studentsSnapshot = await getDocs(q);
     const students: any[] = [];
@@ -140,17 +161,7 @@ export const getAllStudents = async () => {
 // Access code operations
 export const saveSmsOTPCode = async (phone: string, code: string) => {
   try {
-    if (!phone) {
-      return false;
-    }
-
-    const otpRef = doc(db, "sms_otp_codes", phone);
-
-    if ((await getDoc(otpRef)).exists()) {
-      await deleteSmsOTPCode(phone);
-    }
-
-    await setDoc(otpRef, {
+    await setDoc(doc(smsOtpCodesCollection), {
       code,
       phone,
       expires_at: Timestamp.fromMillis(Date.now() + 60 * 10 * 1000), // 10 minutes from now
@@ -164,17 +175,7 @@ export const saveSmsOTPCode = async (phone: string, code: string) => {
 
 export const saveEmailOTPCode = async (email: string, code: string) => {
   try {
-    if (!email) {
-      return false;
-    }
-
-    const otpRef = doc(db, "email_otp_codes", email);
-
-    if ((await getDoc(otpRef)).exists()) {
-      await deleteEmailOTPCode(email);
-    }
-
-    await setDoc(otpRef, {
+    await setDoc(doc(emailOtpCodesCollection), {
       code,
       email,
       expires_at: Timestamp.fromMillis(Date.now() + 60 * 10 * 1000), // 10 minutes from now
@@ -188,12 +189,19 @@ export const saveEmailOTPCode = async (email: string, code: string) => {
 
 export const validateSmsOTPCode = async (phone: string, code: string) => {
   try {
-    const otpDoc = await getDoc(doc(db, "sms_otp_codes", phone));
-    if (!otpDoc.exists()) {
-      return { success: false, error: "Invalid access code" };
+    const q = query(
+      smsOtpCodesCollection,
+      where("phone", "==", phone),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return { success: false, error: "OTP code not found" };
     }
 
-    const otpData = otpDoc.data();
+    const otpData = snapshot.docs[0].data();
     if (otpData.code !== code) {
       return { success: false, error: "Invalid access code" };
     }
@@ -211,12 +219,19 @@ export const validateSmsOTPCode = async (phone: string, code: string) => {
 
 export const validateEmailOTPCode = async (email: string, code: string) => {
   try {
-    const otpDoc = await getDoc(doc(db, "email_otp_codes", email));
-    if (!otpDoc.exists()) {
-      return { success: false, error: "Invalid access code" };
+    const q = query(
+      emailOtpCodesCollection,
+      where("email", "==", email),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return { success: false, error: "OTP code not found" };
     }
 
-    const otpData = otpDoc.data();
+    const otpData = snapshot.docs[0].data();
     if (otpData.code !== code) {
       return { success: false, error: "Invalid access code" };
     }
@@ -234,20 +249,116 @@ export const validateEmailOTPCode = async (email: string, code: string) => {
 
 export const deleteSmsOTPCode = async (phone: string) => {
   try {
-    await deleteDoc(doc(db, "sms_otp_codes", phone));
+    const q = query(
+      smsOtpCodesCollection,
+      where("phone", "==", phone),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return { success: false, error: "OTP code not found" };
+    }
+
+    await deleteDoc(snapshot.docs[0].ref);
+
     return { success: true };
   } catch (error) {
-    console.error("Error deleting access code:", error);
+    console.error("Error deleting OTP code:", error);
     return { success: false };
   }
 };
 
 export const deleteEmailOTPCode = async (email: string) => {
   try {
-    await deleteDoc(doc(db, "email_otp_codes", email));
+    const q = query(
+      emailOtpCodesCollection,
+      where("email", "==", email),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return { success: false, error: "OTP code not found" };
+    }
+
+    await deleteDoc(snapshot.docs[0].ref);
+
     return { success: true };
   } catch (error) {
-    console.error("Error deleting access code:", error);
+    console.error("Error deleting OTP code:", error);
+    return { success: false };
+  }
+};
+
+export const saveAccountSetupToken = async (token: string, email: string) => {
+  try {
+    await setDoc(doc(accountSetupTokensCollection), {
+      token,
+      email,
+      expires_at: Timestamp.fromMillis(Date.now() + 60 * 60 * 24 * 1000), // 24 hours from now
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Error saving account setup token:", error);
+    return { success: false };
+  }
+};
+
+export const validateAccountSetupTokenFireBase = async (
+  email: string,
+  token: string
+) => {
+  try {
+    const q = query(
+      accountSetupTokensCollection,
+      where("email", "==", email),
+      limit(1)
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return { success: false, error: "Invalid token" };
+    }
+
+    const tokenData = querySnapshot.docs[0].data();
+    if (tokenData.token !== token) {
+      return { success: false, error: "Invalid token" };
+    }
+
+    if (tokenData.expires_at.toMillis() < Date.now()) {
+      return { success: false, error: "Token expired" };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error validating account setup token:", error);
+    return { success: false, error: "Unknown error" };
+  }
+};
+
+export const deleteAccountSetupToken = async (email: string) => {
+  try {
+    const q = query(
+      accountSetupTokensCollection,
+      where("email", "==", email),
+      limit(1)
+    );
+
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      return { success: false, error: "Account setup token not found" };
+    }
+
+    await deleteDoc(snapshot.docs[0].ref);
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error deleting account setup token:", error);
     return { success: false };
   }
 };
@@ -255,14 +366,14 @@ export const deleteEmailOTPCode = async (email: string) => {
 // Lesson operations
 export const createLesson = async (lessonData: any) => {
   try {
-    const lessonRef = doc(collection(db, "lessons"));
-    await setDoc(lessonRef, {
+    const id = uuidv4();
+    await setDoc(doc(lessonsCollection), {
       ...lessonData,
-      id: lessonRef.id,
+      id,
       status: "assigned",
       created_at: serverTimestamp(),
     });
-    return { success: true, id: lessonRef.id };
+    return { success: true, id };
   } catch (error) {
     console.error("Error creating lesson:", error);
     throw error;

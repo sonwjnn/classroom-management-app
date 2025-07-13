@@ -3,18 +3,23 @@ export const APP_URL = import.meta.env.VITE_APP_URL;
 
 export const ENDPOINTS = {
   AUTH: {
-    LOGIN_SMS: `${API_BASE_URL}/auth/sms-login`,
-    CURRENT_ROLE: `${API_BASE_URL}/auth/get-role`,
+    LOGIN_SMS: `auth/sms-login`,
+    LOGIN_EMAIL: `auth/email-login`,
+    CURRENT_ROLE: `auth/get-role`,
   },
   STUDENT: {
-    GET_STUDENTS: `${API_BASE_URL}/students`,
+    GET_STUDENTS: `students`,
+    GET_PROFILE_BY_EMAIL: `students/get-profile-by-email`,
+    SETUP_ACCOUNT: `students/setup-account`,
   },
   INSTRUCTOR: {
-    GET_STUDENTS: `${API_BASE_URL}/instructors/get-all-students`,
-    CREATE_STUDENT: `${API_BASE_URL}/instructors/add-student`,
-    DELETE_STUDENT: (phone: string) =>
-      `${API_BASE_URL}/instructors/delete-student/${phone}`,
-    UPDATE_STUDENT: (phone: string) =>
-      `${API_BASE_URL}/instructors/edit-student/${phone}`,
+    GET_STUDENTS: `instructors/get-all-students`,
+    CREATE_STUDENT: `instructors/add-student`,
+    DELETE_STUDENT: (phone: string) => `instructors/delete-student/${phone}`,
+    UPDATE_STUDENT: (phone: string) => `instructors/edit-student/${phone}`,
+    GET_LESSONS: `instructors/my-lessons`,
+    CREATE_LESSON: `instructors/assign-lesson`,
+    DELETE_LESSON: (id: string) => `instructors/delete-lesson/${id}`,
+    UPDATE_LESSON: (id: string) => `instructors/edit-lesson/${id}`,
   },
 } as const;

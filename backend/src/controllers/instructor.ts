@@ -4,11 +4,14 @@ import {
   createLesson,
   createUser,
   deleteUser,
-  getAllStudents as getAllStudentsFirebase,
   getLessonsByStudent,
   getUserByEmail,
   getUserByPhone,
   updateUser,
+  saveAccountSetupToken,
+  lessonsCollection,
+  studentLessonsCollection,
+  getAllStudentsByInstructor,
 } from "../lib/firebase";
 import {
   sendLessonAssignedEmail,
@@ -16,8 +19,22 @@ import {
   validateEmail,
 } from "../lib/mail";
 import { validatePhoneNumber } from "../lib/twilio";
-import { User } from "../types";
-import { formatPhoneNumber } from "../utils";
+import { StudentLesson, User } from "../types";
+import { v4 as uuidv4 } from "uuid";
+import {
+  doc,
+  getDocs,
+  orderBy,
+  query,
+  where,
+  serverTimestamp,
+  setDoc,
+  deleteDoc,
+  updateDoc,
+  DocumentReference,
+  DocumentSnapshot,
+  addDoc,
+} from "firebase/firestore";
 
 const addStudent = async (req: express.Request, res: express.Response) => {
   try {
@@ -59,6 +76,7 @@ const addStudent = async (req: express.Request, res: express.Response) => {
       phone,
       email,
       role: "student",
+      instructor_phone: req.user?.phone || "",
       created_at: new Date(),
       updated_at: new Date(),
       status: "active",
@@ -67,7 +85,9 @@ const addStudent = async (req: express.Request, res: express.Response) => {
     await createUser(studentData);
 
     try {
-      await sendWelcomeEmail(email, name);
+      const token = uuidv4();
+      await saveAccountSetupToken(token, email);
+      await sendWelcomeEmail(email, token, name, phone);
     } catch (emailError) {
       console.error("Error sending welcome email:", emailError);
     }
@@ -84,52 +104,73 @@ const addStudent = async (req: express.Request, res: express.Response) => {
 
 const assignLesson = async (req: express.Request, res: express.Response) => {
   try {
-    const { studentPhone, title, description, instructorPhone } = req.body;
+    const { assignedStudents, title, description } = req.body;
 
-    if (!studentPhone || !title || !description) {
+    if (
+      !assignedStudents ||
+      assignedStudents.length === 0 ||
+      !title ||
+      !description
+    ) {
       return responseHandler.badrequest(
         res,
-        "Student phone, title, and description are required"
-      );
-    }
-
-    const student = await getUserByPhone(studentPhone);
-    if (!student) {
-      return responseHandler.notfound(res);
-    }
-
-    if (student.role !== "student") {
-      return responseHandler.badrequest(res, "User is not a student");
-    }
-
-    if (!student.email) {
-      return responseHandler.badrequest(
-        res,
-        "Student has no email, please update your profile"
+        "Assigned students, title, and description are required"
       );
     }
 
     const lessonData = {
       title,
       description,
-      student_phone: studentPhone,
-      instructor_phone: instructorPhone || "",
-      status: "assigned",
-      created_at: new Date(),
+      created_by: req.user?.phone || "",
     };
 
-    const result = await createLesson(lessonData);
+    const id = uuidv4();
+    await setDoc(doc(lessonsCollection), {
+      ...lessonData,
+      id,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+    });
+
+    const studentLessonsData: StudentLesson[] = assignedStudents.map(
+      (student: {
+        id: string;
+        name: string;
+        email: string;
+        phone: string;
+      }) => ({
+        id: uuidv4(),
+        lesson_id: id,
+        student_id: student.id,
+        student_name: student.name,
+        student_email: student.email,
+        student_phone: student.phone,
+        status: "assigned",
+        created_at: serverTimestamp(),
+        updated_at: serverTimestamp(),
+      })
+    );
+
+    await Promise.all(
+      studentLessonsData.map((studentLesson) =>
+        setDoc(doc(studentLessonsCollection), {
+          ...studentLesson,
+        })
+      )
+    );
 
     try {
-      await sendLessonAssignedEmail(student.email, student.name, title);
+      await Promise.all(
+        studentLessonsData.map(({ student_email, student_name }) =>
+          sendLessonAssignedEmail(student_email, student_name, title)
+        )
+      );
     } catch (emailError) {
       console.error("Error sending lesson notification email:", emailError);
     }
 
     responseHandler.ok(res, {
-      success: true,
       msg: "Lesson assigned successfully",
-      lessonId: result.id,
     });
   } catch (error) {
     console.error("Error assigning lesson:", error);
@@ -137,24 +178,199 @@ const assignLesson = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const getAllStudents = async (req: express.Request, res: express.Response) => {
+const editLesson = async (req: express.Request, res: express.Response) => {
   try {
-    const { phone } = req.query;
+    const { id } = req.params;
+    const { assignedStudents, title, description } = req.body;
 
-    if (!phone) {
-      return responseHandler.badrequest(res, "Phone number is required");
+    if (!id) {
+      return responseHandler.badrequest(res, "Lesson ID is required");
     }
 
-    const user = await getUserByPhone(phone as string);
-    if (!user) {
+    const lessonQuery = query(lessonsCollection, where("id", "==", id));
+    const lessonSnapshot = await getDocs(lessonQuery);
+
+    if (lessonSnapshot.empty) {
+      return responseHandler.notfound(res, "Lesson not found");
+    }
+
+    const lessonDocRef = doc(lessonsCollection, lessonSnapshot.docs[0].id);
+
+    await updateDoc(lessonDocRef, {
+      title,
+      description,
+      updated_at: serverTimestamp(),
+    });
+
+    if (assignedStudents && assignedStudents.length > 0) {
+      const currentStudentsQuery = query(
+        studentLessonsCollection,
+        where("lesson_id", "==", id)
+      );
+      const currentStudentsSnapshot = await getDocs(currentStudentsQuery);
+
+      type Student = {
+        phone: string;
+        email: string;
+        name: string;
+        id: string;
+      };
+
+      const newStudentsMap = new Map<string, Student>();
+      assignedStudents.forEach((student: Student) =>
+        newStudentsMap.set(student.phone, student)
+      );
+
+      const currentStudentsMap = new Map<string, DocumentSnapshot>();
+      currentStudentsSnapshot.forEach((doc) => {
+        currentStudentsMap.set(doc.data().student_phone, doc);
+      });
+
+      const operations: Promise<any>[] = [];
+
+      newStudentsMap.forEach((student, phone) => {
+        if (!currentStudentsMap.has(phone)) {
+          const newStudentLesson = {
+            lesson_id: id,
+            student_id: student.id,
+            student_email: student.email,
+            student_phone: student.phone,
+            student_name: student.name,
+            status: "assigned",
+            created_at: serverTimestamp(),
+            updated_at: serverTimestamp(),
+          };
+          operations.push(addDoc(studentLessonsCollection, newStudentLesson));
+        }
+      });
+
+      currentStudentsMap.forEach((doc, phone) => {
+        if (!newStudentsMap.has(phone)) {
+          operations.push(deleteDoc(doc.ref));
+        }
+      });
+
+      await Promise.all(operations);
+    }
+
+    responseHandler.ok(res, {
+      message: "Lesson updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating lesson:", error);
+    responseHandler.error(res);
+  }
+};
+
+const deleteLesson = async (req: express.Request, res: express.Response) => {
+  try {
+    const { id } = req.params;
+    const q = query(lessonsCollection, where("id", "==", id));
+    const lessonSnapshot = await getDocs(q);
+
+    if (lessonSnapshot.empty) {
       return responseHandler.notfound(res);
     }
+
+    const lessonDoc = lessonSnapshot.docs[0];
+
+    await deleteDoc(doc(lessonsCollection, lessonDoc.id));
+
+    const studentLessonsQuery = query(
+      studentLessonsCollection,
+      where("lesson_id", "==", lessonDoc.data().id)
+    );
+    const studentLessonsSnapshot = await getDocs(studentLessonsQuery);
+
+    const studentLessons = studentLessonsSnapshot.docs.map((doc) => doc.id);
+
+    await Promise.all(
+      studentLessons.map((studentLessonId) =>
+        deleteDoc(doc(studentLessonsCollection, studentLessonId))
+      )
+    );
+
+    responseHandler.ok(res, {
+      msg: "Lesson deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting lesson:", error);
+    responseHandler.error(res);
+  }
+};
+
+const getLessons = async (req: express.Request, res: express.Response) => {
+  try {
+    // 1. Authentication and Authorization
+    if (!req.user) {
+      return responseHandler.unauthorized(res);
+    }
+
+    const user = req.user;
+    if (user.role !== "instructor") {
+      return responseHandler.badrequest(res, "User is not an instructor");
+    }
+
+    if (!user.phone) {
+      return responseHandler.badrequest(res, "User phone number is required");
+    }
+
+    // 2. Get all lessons for this instructor
+    const q = query(lessonsCollection, where("created_by", "==", user.phone));
+
+    const lessonsSnapshot = await getDocs(q);
+
+    // 3. Process lessons in parallel with their assigned students
+    const lessonsWithStudents = await Promise.all(
+      lessonsSnapshot.docs.map(async (doc) => {
+        const lessonData = doc.data();
+
+        // Get assigned students for this lesson
+        const studentsQuery = query(
+          studentLessonsCollection,
+          where("lesson_id", "==", lessonData.id)
+        );
+
+        const studentsSnapshot = await getDocs(studentsQuery);
+
+        const assignedStudents = studentsSnapshot.docs.map((studentDoc) => ({
+          id: studentDoc.data().id,
+          ...studentDoc.data(),
+        }));
+
+        return {
+          id: lessonData.id,
+          title: lessonData.title,
+          description: lessonData.description,
+          created_by: lessonData.created_by,
+          created_at: lessonData.created_at,
+          updated_at: lessonData.updated_at,
+          assigned_students: assignedStudents,
+        };
+      })
+    );
+
+    responseHandler.ok(res, lessonsWithStudents);
+  } catch (error) {
+    console.error("Error getting lessons:", error);
+
+    responseHandler.error(res, "Failed to get lessons");
+  }
+};
+
+const getAllStudents = async (req: express.Request, res: express.Response) => {
+  try {
+    if (!req.user) {
+      return responseHandler.unauthorized(res);
+    }
+
+    const user = req.user;
 
     if (user.role !== "instructor") {
       return responseHandler.badrequest(res, "User is not an instructor");
     }
 
-    const students = await getAllStudentsFirebase();
+    const students = await getAllStudentsByInstructor(user.phone);
 
     const sanitizedStudents = students.map((student) => ({
       id: student.id,
@@ -304,7 +520,19 @@ const deleteStudentByPhone = async (
       return responseHandler.error(res, "Failed to delete student");
     }
 
-    // TODO: Also delete associated lessons and messages
+    const studentLessonsQuery = query(
+      studentLessonsCollection,
+      where("student_phone", "==", phone)
+    );
+    const studentLessonsSnapshot = await getDocs(studentLessonsQuery);
+
+    const studentLessons = studentLessonsSnapshot.docs.map((doc) => doc.id);
+
+    await Promise.all(
+      studentLessons.map((studentLessonId) =>
+        deleteDoc(doc(studentLessonsCollection, studentLessonId))
+      )
+    );
 
     responseHandler.ok(res, {
       msg: "Student deleted successfully",
@@ -318,6 +546,9 @@ const deleteStudentByPhone = async (
 export default {
   addStudent,
   assignLesson,
+  editLesson,
+  deleteLesson,
+  getLessons,
   getAllStudents,
   getStudentWithLessonsByPhone,
   editStudentByPhone,

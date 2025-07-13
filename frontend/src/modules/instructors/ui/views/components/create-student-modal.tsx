@@ -1,5 +1,3 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -17,44 +15,33 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { updateStudentSchema } from "@/modules/instructors/schema";
+
+import { createStudentSchema } from "@/modules/instructors/schema";
 import { useModal } from "@/store/use-modal-store";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
 import PhoneInput from "react-phone-number-input";
-import { useEditStudent } from "../api/use-edit-student";
+import { useCreateStudent } from "../../../api/use-create-student";
 
-export const EditStudentModal = () => {
-  const { isOpen, onClose, type, data } = useModal();
-  const { mutateAsync: editStudent, isPending } = useEditStudent({
-    phone: data?.student?.phone || "",
-  });
+export const CreateStudentModal = () => {
+  const { isOpen, onClose, type } = useModal();
+  const { mutateAsync: createStudent, isPending } = useCreateStudent();
 
-  const isModalOpen = isOpen && type === "editStudent";
-  const { student } = data;
+  const isModalOpen = isOpen && type === "createStudent";
 
   const form = useForm({
-    resolver: zodResolver(updateStudentSchema),
+    resolver: zodResolver(createStudentSchema),
     defaultValues: {
-      name: student?.name || "",
-      email: student?.email || "",
-      newPhone: student?.phone || "",
+      name: "",
+      email: "",
+      phone: "",
     },
   });
 
-  useEffect(() => {
-    if (student && isModalOpen) {
-      form.setValue("name", student.name);
-      form.setValue("email", student.email || "");
-      form.setValue("newPhone", student.phone);
-    }
-  }, [form, student, isModalOpen]);
-
-  const onSubmit = async (values: z.infer<typeof updateStudentSchema>) => {
-    await editStudent(values).then(() => {
+  const onSubmit = async (values: z.infer<typeof createStudentSchema>) => {
+    await createStudent(values).then(() => {
       onClose();
     });
   };
@@ -69,7 +56,7 @@ export const EditStudentModal = () => {
       <DialogContent className="overflow-hidden bg-white p-0 text-black">
         <DialogHeader className="px-6 pt-8">
           <DialogTitle className="text-center text-2xl font-bold ">
-            Edit Student
+            Create Student
           </DialogTitle>
         </DialogHeader>
         <Form {...form}>
@@ -113,7 +100,7 @@ export const EditStudentModal = () => {
               />
               <FormField
                 control={form.control}
-                name="newPhone"
+                name="phone"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold uppercase text-zinc-500 dark:text-zinc-300">
@@ -134,7 +121,7 @@ export const EditStudentModal = () => {
                 variant="default"
                 disabled={isPending || !form.formState.isValid}
               >
-                Update
+                Create
               </Button>
             </DialogFooter>
           </form>

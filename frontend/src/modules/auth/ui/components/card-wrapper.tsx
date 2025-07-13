@@ -24,20 +24,21 @@ export const CardWrapper = ({
   const isLogin = type === "login";
   const isSignup = type === "register";
   const isOtp = type === "otp";
-  const isOther = !isLogin && !isSignup && !isOtp;
 
   return (
-    <Card className="p-8 w-[400px]">
+    <Card className="p-8 w-[400px] border-none shadow-none">
       <CardHeader className="px-0 pt-0">
-        <CardTitle>{headerLabel}</CardTitle>
-        <CardDescription>{headerDescription}</CardDescription>
+        <CardTitle className="text-xl">{headerLabel}</CardTitle>
+        <CardDescription className="text-sm">
+          {headerDescription}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5 px-0 pb-0">
         {children}
         {isLogin && (
           <p className="text-xs text-muted-foreground">
             Don&apos;t have an account?{" "}
-            <Link to="/auth/register" onClick={() => {}}>
+            <Link to="/auth/login" onClick={() => {}}>
               <span className="text-sky-700 hover:underline">Sign up</span>
             </Link>
           </p>

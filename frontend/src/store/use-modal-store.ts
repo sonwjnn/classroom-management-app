@@ -1,10 +1,27 @@
-import type { Student } from "@/modules/instructors/types";
+import type { Lesson, Student } from "@/modules/instructors/types";
 import { create } from "zustand";
 
-export type ModalType = "createStudent" | "editStudent";
+export type ModalType =
+  | "createStudent"
+  | "editStudent"
+  | "createLesson"
+  | "editLesson";
 
 interface ModalData {
   student?: Pick<Student, "name" | "email" | "phone">;
+  lesson?: {
+    id: string;
+    title: string;
+    description: string;
+    assigned_students: {
+      id: string;
+      lesson_id: string;
+      student_id: string;
+      name: string;
+      phone: string;
+      email: string;
+    }[];
+  };
 }
 
 interface ModalStore {

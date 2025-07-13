@@ -35,7 +35,6 @@ const sendEmail = async (to: string, subject: string, html: string) => {
     };
 
     const result = await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully:", result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error("Error sending email:", error);
@@ -45,7 +44,9 @@ const sendEmail = async (to: string, subject: string, html: string) => {
 
 export const sendWelcomeEmail = async (
   studentEmail: string,
-  studentName: string
+  token: string,
+  studentName: string,
+  studentPhone: string
 ) => {
   const subject = "Welcome to Classroom Management App";
   const html = `
@@ -55,11 +56,15 @@ export const sendWelcomeEmail = async (
       <p>You have been added to the Classroom Management App by your instructor.</p>
       <p>To get started:</p>
       <ol>
-        <li>Visit our app at <a href="${domain}">${domain}</a></li>
-        <li>Click on "Student Login"</li>
-        <li>Enter your email address: <strong>${studentEmail}</strong></li>
-        <li>You'll receive a verification code via email</li>
+        <li>Visit our app at <a href="${domain}/auth/setup-account?token=${token}&email=${studentEmail}&phone=${studentPhone}&name=${studentName}">link</a></li>
         <li>Complete your profile setup</li>
+        <li>Go to login page</li>
+        <li>Enter your email address: <strong>${studentEmail}</strong></li>
+        <li>Enter your password</li>
+        <li>You'll receive a verification code via email</li>
+        <li>Enter the verification code</li>
+        <li>Go to dashboard</li>
+        <li>Start your first lesson</li>
       </ol>
       <p>If you have any questions, please contact your instructor.</p>
       <p>Best regards,<br>Classroom Management Team</p>

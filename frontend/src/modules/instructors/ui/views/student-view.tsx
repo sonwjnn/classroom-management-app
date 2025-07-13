@@ -1,4 +1,4 @@
-import { TablesClient } from "../components/client";
+import { TablesClient } from "./components/student-table/client";
 import { useGetStudents } from "@/modules/instructors/api/use-get-students";
 
 export const StudentView = () => {

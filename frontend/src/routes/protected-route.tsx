@@ -1,7 +1,8 @@
+import { TOKEN_NAME } from "@/constants";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 
 export default function ProtectedRoute() {
-  const isAuthenticated = !!localStorage.getItem("phone");
+  const isAuthenticated = !!localStorage.getItem(TOKEN_NAME);
 
   const location = useLocation();
 

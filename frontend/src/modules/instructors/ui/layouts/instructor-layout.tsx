@@ -1,25 +1,11 @@
-import { Navigate, Outlet } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { Navbar } from "@/components/common/navbar";
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { InstructorSidebar } from "../components/instructor-sidebar";
+import { InstructorSidebar } from "../views/components/instructor-sidebar";
 import { useCurrentRole } from "@/modules/auth/api/use-current-role";
-import { useNavigate } from "react-router-dom";
 
 export default function InstructorLayout() {
-  const navigate = useNavigate();
-
-  const { data, isLoading } = useCurrentRole({
-    phone: localStorage.getItem("phone")!,
-  });
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!data || data.role !== "instructor") {
-    navigate("/");
-    return;
-  }
+  useCurrentRole();
 
   return (
     <SidebarProvider>

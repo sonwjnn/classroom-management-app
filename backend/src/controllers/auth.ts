@@ -7,6 +7,7 @@ import {
   getUserByPhone,
   saveEmailOTPCode,
   saveSmsOTPCode,
+  validateAccountSetupTokenFireBase,
   validateEmailOTPCode,
   validateSmsOTPCode,
 } from "../lib/firebase";
@@ -18,6 +19,7 @@ import { validatePhoneNumber, sendSmsVerificationCode } from "../lib/twilio";
 import { User } from "../types";
 import { formatPhoneNumber, generateAccessCode } from "../utils";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 const loginSMS = async (req: express.Request, res: express.Response) => {
   try {
@@ -68,9 +70,11 @@ const loginSMS = async (req: express.Request, res: express.Response) => {
       });
     }
 
+    const token = generateJWT(user);
+
     responseHandler.ok(res, {
-      role: user?.role,
-      phone: user?.phone,
+      accessToken: token,
+      user,
       msg: "Login successfully",
     });
   } catch (error) {
@@ -136,13 +140,15 @@ const loginEmail = async (req: express.Request, res: express.Response) => {
       await sendEmailVerificationCode(email, accessCode);
 
       return responseHandler.ok(res, {
-        email: email,
         msg: "Verification code sent to your email",
       });
     }
 
+    const token = generateJWT(user);
+
     responseHandler.ok(res, {
-      role: user?.role,
+      accessToken: token,
+      user,
       msg: "Login successfully",
     });
   } catch (error) {
@@ -151,57 +157,14 @@ const loginEmail = async (req: express.Request, res: express.Response) => {
   }
 };
 
-const register = async (req: express.Request, res: express.Response) => {
-  try {
-    const { name, phone, email } = req.body;
-
-    if (!name || !phone || !email) {
-      return responseHandler.badrequest(res, "All fields are required");
-    }
-
-    const existingUser = await getUserByPhone(phone);
-    if (existingUser) {
-      return responseHandler.badrequest(res, "User already exists");
-    }
-
-    const userData: Omit<User, "id"> = {
-      name,
-      phone,
-      email,
-      role: "student",
-      created_at: new Date(),
-      updated_at: new Date(),
-      status: "active",
-    };
-
-    await createUser(userData);
-
-    responseHandler.ok(res, {
-      success: true,
-      msg: "User registered successfully",
-      user: userData,
-    });
-  } catch (error) {
-    console.error("Error registering user:", error);
-    responseHandler.error(res);
-  }
-};
-
 const getRole = async (req: express.Request, res: express.Response) => {
   try {
-    const { phone } = req.query;
-
-    if (!phone) {
-      return responseHandler.badrequest(res, "Phone number is required");
-    }
-
-    const user = await getUserByPhone(phone as string);
-    if (!user) {
-      return responseHandler.notfound(res);
+    if (!req.user) {
+      return responseHandler.unauthorized(res);
     }
 
     responseHandler.ok(res, {
-      role: user?.role,
+      role: req.user.role,
     });
   } catch (error) {
     console.error("Error getting role:", error);
@@ -209,9 +172,37 @@ const getRole = async (req: express.Request, res: express.Response) => {
   }
 };
 
+const getCurrentUser = async (req: express.Request, res: express.Response) => {
+  try {
+    if (!req.user) {
+      return responseHandler.unauthorized(res);
+    }
+
+    const { password, ...userInfo } = req.user;
+
+    responseHandler.ok(res, {
+      user: userInfo,
+    });
+  } catch (error) {
+    console.error("Get current user error:", error);
+    return responseHandler.error(res);
+  }
+};
+
+const generateJWT = (user: User) => {
+  const payload = {
+    id: user.id,
+    email: user.email,
+    phone: user.phone,
+    role: user.role,
+  };
+
+  return jwt.sign(payload, process.env.JWT_SECRET!, { expiresIn: "24h" });
+};
+
 export default {
   loginSMS,
   loginEmail,
-  register,
   getRole,
+  getCurrentUser,
 };

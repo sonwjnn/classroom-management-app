@@ -1,21 +1,31 @@
-import { useQuery } from "@tanstack/react-query";
 import { ENDPOINTS } from "@/modules/endpoints";
-import axios from "axios";
+import privateClient from "@/lib/client/private-client";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useEffect } from "react";
 
-export const useCurrentRole = ({ phone }: { phone: string }) => {
-  const query = useQuery({
-    enabled: !!phone,
-    queryKey: ["current-role", phone],
-    queryFn: async () => {
-      const response = await axios.get(ENDPOINTS.AUTH.CURRENT_ROLE, {
-        params: {
-          phone,
-        },
-      });
+export const useCurrentRole = () => {
+  const navigate = useNavigate();
+  const pathname = useLocation().pathname;
 
-      return response.data as { role: "student" | "instructor" };
-    },
-  });
+  useEffect(() => {
+    async function getCurrentRole() {
+      const response = await privateClient.get(ENDPOINTS.AUTH.CURRENT_ROLE);
 
-  return query;
+      if (response.data?.role === "student") {
+        if (pathname.startsWith("/students")) {
+          return;
+        }
+        navigate("/students");
+      }
+
+      if (response.data?.role === "instructor") {
+        if (pathname.startsWith("/instructors")) {
+          return;
+        }
+        navigate("/instructors");
+      }
+    }
+
+    getCurrentRole();
+  }, []);
 };

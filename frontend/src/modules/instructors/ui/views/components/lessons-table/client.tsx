@@ -4,12 +4,11 @@ import { Heading } from "@/components/ui/heading";
 import { Separator } from "@/components/ui/separator";
 import { Plus } from "lucide-react";
 
-import { type StudentColumn, columns } from "./columns";
-import { useNavigate } from "react-router-dom";
+import { type LessonColumn, columns } from "./columns";
 import { useModal } from "@/store/use-modal-store";
 
 interface TablesClientProps {
-  data: StudentColumn[];
+  data: LessonColumn[];
 }
 
 export const TablesClient = ({ data }: TablesClientProps) => {
@@ -19,15 +18,15 @@ export const TablesClient = ({ data }: TablesClientProps) => {
     <>
       <div className="flex items-center justify-between">
         <Heading
-          title={`Students (${data.length})`}
-          description="Manage students"
+          title={`Lessons (${data.length})`}
+          description="Manage lessons"
         />
-        <Button onClick={() => onOpen("createStudent")}>
+        <Button onClick={() => onOpen("createLesson")}>
           <Plus className="h-4 w-4" /> Add New
         </Button>
       </div>
       <Separator />
-      <DataTable searchKey="name" columns={columns} data={data} />
+      <DataTable searchKey="title" columns={columns} data={data} />
     </>
   );
 };
