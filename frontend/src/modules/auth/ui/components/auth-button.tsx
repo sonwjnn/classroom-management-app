@@ -29,12 +29,6 @@ export const AuthButton = () => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-72 rounded-xl p-2">
         <div className="space-y-1">
-          <Link to="/my-profile/settings">
-            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm hover:bg-accent">
-              <UserCircle className="size-4 text-black" />
-              My Profile
-            </DropdownMenuItem>
-          </Link>
           <DropdownMenuItem
             className="group flex cursor-pointer items-center gap-2 rounded-md px-3 py-2 text-sm  hover:!bg-red-100 hover:!text-red-700"
             onClick={handleLogout}

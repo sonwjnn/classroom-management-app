@@ -36,7 +36,6 @@ export function AssignedStudentsCell({
     <HoverCard openDelay={100} closeDelay={100}>
       <HoverCardTrigger asChild>
         <div className="flex items-center gap-2 cursor-pointer">
-          {/* Avatar Stack */}
           <div className="flex -space-x-2">
             {visibleStudents.map((student, index) => (
               <Avatar
@@ -64,7 +63,6 @@ export function AssignedStudentsCell({
             )}
           </div>
 
-          {/* Count Badge */}
           <Badge variant="secondary" className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             {studentCount}

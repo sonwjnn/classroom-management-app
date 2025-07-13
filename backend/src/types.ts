@@ -76,11 +76,17 @@ export interface StudentLesson {
   updated_at: string;
 }
 
+export interface Conversation {
+  id: string;
+  user_one_id: string;
+  user_two_id: string;
+  created_at: string;
+  updated_at: string;
+}
 export interface Message {
   id: string;
-  from_phone: string;
-  to_phone: string;
-  message: string;
-  read: boolean;
-  timestamp: Date;
+  content: string;
+  user_id: string;
+  conversation_id: string;
+  created_at: Date;
 }

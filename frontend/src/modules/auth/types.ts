@@ -24,6 +24,7 @@ export type User = {
   name: string;
   email?: string;
   phone: string;
+  instructor_phone?: string;
   role: "student" | "instructor";
   created_at: Date;
   updated_at: Date;

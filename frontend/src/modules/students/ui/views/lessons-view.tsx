@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useGetStudentLessons } from "@/modules/students/api/use-get-student-lessons";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, BookOpen, CheckCircle, Clock, RefreshCw } from "lucide-react";
+import { Search, BookOpen, CheckCircle, Clock } from "lucide-react";
 import { LessonGrid } from "../components/lesson-grid";
 import { useMarkLessonDone } from "@/modules/students/api/use-mark-lesson-done";
 

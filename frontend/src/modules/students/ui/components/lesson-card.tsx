@@ -12,7 +12,6 @@ import {
   Clock,
   Calendar,
   MoreVertical,
-  Play,
   BookOpen,
 } from "lucide-react";
 import { format } from "date-fns";

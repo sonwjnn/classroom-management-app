@@ -6,7 +6,6 @@ export const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 h-16 border-b border-gray-200 bg-white flex items-center px-2 pr-5 z-50">
       <div className="flex items-center justify-between gap-4 w-full">
-        {/* Menu and Logo */}
         <div className="flex items-center flex-shrink-0">
           <SidebarTrigger />
           <Link to={"/"}>
@@ -15,7 +14,6 @@ export const Navbar = () => {
             </div>
           </Link>
         </div>
-        {/* Search Bar */}
 
         <div className="flex-shrink-0 items-center flex gap-4">
           <AuthButton />
