@@ -407,11 +407,6 @@ export const updateLessonStatus = async (lessonId: string, status: string) => {
     const lessonRef = doc(db, "lessons", lessonId);
     const updates: any = { status };
 
-    if (status === "completed") {
-      updates.completedAt = serverTimestamp();
-    }
-
-    await updateDoc(lessonRef, updates);
     return { success: true };
   } catch (error) {
     console.error("Error updating lesson status:", error);

@@ -180,9 +180,7 @@ const getCurrentUser = async (req: express.Request, res: express.Response) => {
 
     const { password, ...userInfo } = req.user;
 
-    responseHandler.ok(res, {
-      user: userInfo,
-    });
+    responseHandler.ok(res, userInfo);
   } catch (error) {
     console.error("Get current user error:", error);
     return responseHandler.error(res);

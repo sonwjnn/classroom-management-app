@@ -6,11 +6,14 @@ export const ENDPOINTS = {
     LOGIN_SMS: `auth/sms-login`,
     LOGIN_EMAIL: `auth/email-login`,
     CURRENT_ROLE: `auth/get-role`,
+    CURRENT_USER: `auth/current`,
   },
   STUDENT: {
     GET_STUDENTS: `students`,
     GET_PROFILE_BY_EMAIL: `students/get-profile-by-email`,
     SETUP_ACCOUNT: `students/setup-account`,
+    GET_LESSONS: `students/get-my-lessons`,
+    MARK_LESSON_DONE: (id: string) => `students/mark-lesson-done/${id}`,
   },
   INSTRUCTOR: {
     GET_STUDENTS: `instructors/get-all-students`,

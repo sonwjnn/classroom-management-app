@@ -301,7 +301,6 @@ const deleteLesson = async (req: express.Request, res: express.Response) => {
 
 const getLessons = async (req: express.Request, res: express.Response) => {
   try {
-    // 1. Authentication and Authorization
     if (!req.user) {
       return responseHandler.unauthorized(res);
     }
@@ -315,17 +314,14 @@ const getLessons = async (req: express.Request, res: express.Response) => {
       return responseHandler.badrequest(res, "User phone number is required");
     }
 
-    // 2. Get all lessons for this instructor
     const q = query(lessonsCollection, where("created_by", "==", user.phone));
 
     const lessonsSnapshot = await getDocs(q);
 
-    // 3. Process lessons in parallel with their assigned students
     const lessonsWithStudents = await Promise.all(
       lessonsSnapshot.docs.map(async (doc) => {
         const lessonData = doc.data();
 
-        // Get assigned students for this lesson
         const studentsQuery = query(
           studentLessonsCollection,
           where("lesson_id", "==", lessonData.id)
@@ -386,42 +382,6 @@ const getAllStudents = async (req: express.Request, res: express.Response) => {
     responseHandler.ok(res, sanitizedStudents);
   } catch (error) {
     console.error("Error getting students:", error);
-    responseHandler.error(res);
-  }
-};
-
-const getStudentWithLessonsByPhone = async (
-  req: express.Request,
-  res: express.Response
-) => {
-  try {
-    const { phone } = req.params;
-
-    const student = await getUserByPhone(phone);
-    if (!student) {
-      return responseHandler.notfound(res);
-    }
-
-    if (student.role !== "student") {
-      return responseHandler.badrequest(res, "User is not a student");
-    }
-
-    const lessons = await getLessonsByStudent(phone);
-
-    const sanitizedStudent = {
-      id: student.id,
-      name: student.name,
-      phone: student.phone,
-      email: student.email,
-      role: student.role,
-      created_at: student.created_at,
-      updated_at: student.updated_at,
-      lessons: lessons,
-    };
-
-    responseHandler.ok(res, sanitizedStudent);
-  } catch (error) {
-    console.error("Error getting student:", error);
     responseHandler.error(res);
   }
 };
@@ -550,7 +510,6 @@ export default {
   deleteLesson,
   getLessons,
   getAllStudents,
-  getStudentWithLessonsByPhone,
   editStudentByPhone,
   deleteStudentByPhone,
 };

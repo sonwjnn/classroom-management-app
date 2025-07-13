@@ -13,6 +13,7 @@ import StudentLayout from "@/modules/students/ui/layouts/student-layout";
 import InstructorLayout from "@/modules/instructors/ui/layouts/instructor-layout";
 import RedirectRoute from "./redirect-route";
 import { SetupAccountView } from "@/modules/auth/ui/views/setup-account-view";
+import { ProfileView } from "@/modules/students/ui/views/profile-view";
 export const Routers = () => {
   return (
     <Routes>
@@ -25,8 +26,8 @@ export const Routers = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<StudentLayout />}>
           <Route path="/students" element={<Outlet />}>
-            <Route index element={<StudentView />} />
-            <Route path="lessons" element={<LessonViewStudent />} />
+            <Route index element={<LessonViewStudent />} />
+            <Route path="profile" element={<ProfileView />} />
             <Route path="messages" element={<MessageView />} />
           </Route>
         </Route>

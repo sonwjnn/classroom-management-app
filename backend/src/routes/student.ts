@@ -13,8 +13,8 @@ export default (): express.Router => {
     requestHandler.validate,
     studentController.getMyLessons
   );
-  router.get(
-    "/mark-lesson-done",
+  router.patch(
+    "/mark-lesson-done/:lessonId",
     isAuthenticated,
     requestHandler.validate,
     studentController.markLessonDone

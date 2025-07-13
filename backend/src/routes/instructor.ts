@@ -43,12 +43,6 @@ export default (): express.Router => {
     requestHandler.validate,
     instructorController.getLessons
   );
-  router.get(
-    "/get-student-with-lessons/:phone",
-    isAuthenticated,
-    requestHandler.validate,
-    instructorController.getStudentWithLessonsByPhone
-  );
   router.patch(
     "/edit-student/:phone",
     isAuthenticated,

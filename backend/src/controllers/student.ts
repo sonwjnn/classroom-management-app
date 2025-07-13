@@ -7,13 +7,22 @@ import {
   getMessagesBetweenUsers,
   getUserByEmail,
   getUserByPhone,
+  lessonsCollection,
+  studentLessonsCollection,
   updateLessonStatus,
   updateUser,
   validateAccountSetupTokenFireBase,
   validateEmailOTPCode,
 } from "../lib/firebase";
 import { validateEmail } from "../lib/mail";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import bcrypt from "bcryptjs";
 import { formatPhoneNumber } from "../utils";
 import { User } from "../types";
@@ -21,22 +30,40 @@ import { v4 as uuidv4 } from "uuid";
 
 const getMyLessons = async (req: express.Request, res: express.Response) => {
   try {
-    const { phone } = req.query;
-
-    if (!phone) {
-      return responseHandler.badrequest(res, "Phone number is required");
+    if (!req.user) {
+      return responseHandler.unauthorized(res);
     }
 
-    const student = await getUserByPhone(phone as string);
-    if (!student) {
-      return responseHandler.notfound(res);
-    }
+    const user = req.user;
 
-    if (student.role !== "student") {
+    if (user.role !== "student") {
       return responseHandler.badrequest(res, "User is not a student");
     }
 
-    const lessons = await getLessonsByStudent(phone as string);
+    const q = query(
+      studentLessonsCollection,
+      where("student_id", "==", user.id)
+    );
+
+    const lessonsSnapshot = await getDocs(q);
+
+    if (lessonsSnapshot.empty) {
+      return responseHandler.notfound(res, "No lessons found");
+    }
+
+    const studentLessons = lessonsSnapshot.docs.map((doc) => doc.data());
+
+    const lessons = await Promise.all(
+      studentLessons.map(async (lesson) => {
+        const q = query(lessonsCollection, where("id", "==", lesson.lesson_id));
+
+        const lessonDoc = await getDocs(q);
+        return {
+          ...lesson,
+          ...lessonDoc.docs[0].data(),
+        };
+      })
+    );
 
     responseHandler.ok(res, lessons);
   } catch (error) {
@@ -47,25 +74,46 @@ const getMyLessons = async (req: express.Request, res: express.Response) => {
 
 const markLessonDone = async (req: express.Request, res: express.Response) => {
   try {
-    const { phone, lessonId } = req.body;
+    const { lessonId } = req.params;
 
-    if (!phone || !lessonId) {
-      return responseHandler.badrequest(
-        res,
-        "Phone number and lesson ID are required"
-      );
+    if (!lessonId) {
+      return responseHandler.badrequest(res, "Lesson ID is required");
     }
 
-    const student = await getUserByPhone(phone as string);
-    if (!student) {
-      return responseHandler.notfound(res);
+    if (!req.user) {
+      return responseHandler.unauthorized(res);
     }
 
-    if (student.role !== "student") {
+    const user = req.user;
+
+    if (user.role !== "student") {
       return responseHandler.badrequest(res, "User is not a student");
     }
 
-    await updateLessonStatus(lessonId, "completed");
+    const q = query(
+      studentLessonsCollection,
+      where("lesson_id", "==", lessonId),
+      where("student_id", "==", user.id)
+    );
+
+    const lessonsSnapshot = await getDocs(q);
+
+    if (lessonsSnapshot.empty) {
+      return responseHandler.notfound(res, "No lessons found");
+    }
+
+    const lesson = lessonsSnapshot.docs[0].data();
+
+    if (lesson.status === "completed") {
+      return responseHandler.badrequest(
+        res,
+        "Lesson is already marked as completed"
+      );
+    }
+
+    await updateDoc(doc(studentLessonsCollection, lessonsSnapshot.docs[0].id), {
+      status: "completed",
+    });
 
     responseHandler.ok(res, {
       msg: "Lesson marked as completed",
