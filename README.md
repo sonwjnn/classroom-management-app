@@ -2,6 +2,11 @@
 
 A real-time classroom management tool built with React 19 and Node.js TypeScript, enabling instructors to manage students, assign lessons, and communicate via live chat. The app supports secure SMS-based login, role-based dashboards, and real-time updates using Socket.io and Firebase.
 
+## 🚀 Demo (screenshots)
+
+[View Website Screenshots](https://github.com/sonwjnn/classroom-management-app/tree/master/frontend/resources)
+
+
 ## ✨ Features
 
 - 🏬 User Authentication: Login via phone number with a 6-digit SMS code (Twilio) or email with a 6-digit OTP code, saving JWT token to localStorage.
