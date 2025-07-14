@@ -29,8 +29,8 @@ export const Routers = () => {
           <Route path="/students" element={<Outlet />}>
             <Route index element={<LessonViewStudent />} />
             <Route path="profile" element={<ProfileView />} />
-            <Route element={<ChatLayout />}>
-              <Route path="messages" element={<ChatView />} />
+            <Route path="messages" element={<ChatLayout type="student" />}>
+              <Route path=":userId" element={<ChatView />} />
             </Route>
           </Route>
         </Route>
@@ -39,8 +39,8 @@ export const Routers = () => {
           <Route path="/instructors" element={<Outlet />}>
             <Route index element={<StudentView />} />
             <Route path="lessons" element={<LessonsViewInstructor />} />
-            <Route element={<ChatLayout />}>
-              <Route path="messages" element={<ChatView />} />
+            <Route path="messages" element={<ChatLayout type="instructor" />}>
+              <Route path=":userId" element={<ChatView />} />
             </Route>
           </Route>
         </Route>

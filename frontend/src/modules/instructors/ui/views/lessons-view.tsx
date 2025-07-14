@@ -1,11 +1,7 @@
+import type { Timestamp } from "@/types";
 import { useGetInstructorLessons } from "../../api/use-get-instructor-lessons";
 import { TablesClient } from "./components/lessons-table/client";
 import { format } from "date-fns";
-
-type Timestamp = {
-  seconds: number;
-  nanoseconds: number;
-};
 
 export const LessonsView = () => {
   const { data, isLoading } = useGetInstructorLessons();

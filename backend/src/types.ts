@@ -14,7 +14,6 @@ export interface ServerToClientEvents {
   basicEmit: (a: number, b: string, c: Buffer) => void;
   withAck: (d: string, callback: (e: number) => void) => void;
   newMessage: (message: Omit<Message, "id">) => void;
-  userTyping: (data: { is_typing: boolean }) => void;
   messageSent: (data: {
     success: boolean;
     messageData?: Omit<Message, "id">;
@@ -23,13 +22,12 @@ export interface ServerToClientEvents {
 }
 
 export interface ClientToServerEvents {
-  join: (phone: string) => void;
+  join: (user_id: string) => void;
   sendMessage: (data: {
-    from_phone: string;
-    to_phone: string;
+    user_id: string;
+    conversation_id: string;
     message: string;
   }) => void;
-  typing: (data: { to_phone: string; is_typing: boolean }) => void;
 }
 
 export interface InterServerEvents {

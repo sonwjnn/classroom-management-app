@@ -3,15 +3,17 @@ import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { useAddMessage } from "../../api/use-add-message";
 interface ChatInputProps {
-  apiUrl: string;
-  query: Record<string, any>;
   name: string;
+  conversationId: string;
 }
 const formSchema = z.object({
   content: z.string().min(1),
 });
-export const ChatInput = () => {
+export const ChatInput = ({ name, conversationId }: ChatInputProps) => {
+  const mutation = useAddMessage();
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -20,14 +22,13 @@ export const ChatInput = () => {
   });
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      // const url = qs.stringifyUrl({
-      //   url: apiUrl,
-      //   query,
-      // })
-      // await axios.post(url, { ...values, user })
-      // form.reset()
+      mutation.mutate({
+        content: values.content,
+        conversationId,
+      });
+      form.reset();
     } catch (error) {
-      // console.log(error)
+      console.log(error);
     }
   };
   return (
@@ -43,7 +44,7 @@ export const ChatInput = () => {
                   <Input
                     disabled={false}
                     className="border-0 border-none bg-zinc-200/90 px-8 py-6 text-zinc-600 focus-visible:ring-0 focus-visible:ring-offset-0 "
-                    placeholder={`Send message to name`}
+                    placeholder={`Send message to ${name}`}
                     {...field}
                   />
                 </div>

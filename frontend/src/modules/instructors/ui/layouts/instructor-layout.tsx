@@ -11,7 +11,7 @@ export default function InstructorLayout() {
     <SidebarProvider>
       <div className="w-full">
         <Navbar />
-        <div className="flex min-h-[calc(100vh-4rem)] pt-[4rem]">
+        <div className="flex h-full pt-[4rem]">
           <InstructorSidebar />
           <main className="flex-1 overflow-y-auto">{<Outlet />}</main>
         </div>

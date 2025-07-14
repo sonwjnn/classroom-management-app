@@ -19,31 +19,18 @@ export default (): express.Router => {
     requestHandler.validate,
     studentController.markLessonDone
   );
+  router.get(
+    "/get-my-instructor",
+    isAuthenticated,
+    requestHandler.validate,
+    studentController.getMyInstructor
+  );
   router.post(
     "/undo-lesson",
     isAuthenticated,
     requestHandler.validate,
     studentController.undoLesson
   );
-  router.get(
-    "/get-student-profile",
-    isAuthenticated,
-    requestHandler.validate,
-    studentController.getStudentProfile
-  );
-  router.get(
-    "/get-profile-by-email",
-    isAuthenticated,
-    requestHandler.validate,
-    studentController.getProfileByEmail
-  );
-  router.patch(
-    "/edit-student-profile",
-    isAuthenticated,
-    requestHandler.validate,
-    studentController.editStudentProfile
-  );
-
   router.get(
     "/get-messages",
     isAuthenticated,

@@ -43,6 +43,7 @@ export const accountSetupTokensCollection = collection(
 );
 export const lessonsCollection = collection(db, "lessons");
 export const studentLessonsCollection = collection(db, "student_lessons");
+export const conversationCollection = collection(db, "conversations");
 
 // User Operations
 export const createUser = async (userData: Partial<Omit<User, "id">>) => {

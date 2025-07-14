@@ -7,13 +7,16 @@ import { BrowserRouter } from "react-router-dom";
 import { QueryProvider } from "./providers/query-provider";
 import { Modals } from "./components/modals.tsx";
 import { Toaster } from "sonner";
+import { SocketProvider } from "./providers/socket-provider.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <BrowserRouter>
-    <QueryProvider>
-      <Modals />
-      <Toaster />
-      <App />
-    </QueryProvider>
+    <SocketProvider>
+      <QueryProvider>
+        <Modals />
+        <Toaster />
+        <App />
+      </QueryProvider>
+    </SocketProvider>
   </BrowserRouter>
 );

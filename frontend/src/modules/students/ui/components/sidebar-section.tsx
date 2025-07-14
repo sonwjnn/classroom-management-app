@@ -19,7 +19,6 @@ const items = [
     title: "My Profile",
     url: "/students/profile",
     icon: BookOpenTextIcon,
-    auth: true,
   },
   {
     title: "Message",

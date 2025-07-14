@@ -12,7 +12,6 @@ import {
   updateLessonStatus,
   updateUser,
   validateAccountSetupTokenFireBase,
-  validateEmailOTPCode,
 } from "../lib/firebase";
 import { validateEmail } from "../lib/mail";
 import {
@@ -24,9 +23,6 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import bcrypt from "bcryptjs";
-import { formatPhoneNumber } from "../utils";
-import { User } from "../types";
-import { v4 as uuidv4 } from "uuid";
 
 const getMyLessons = async (req: express.Request, res: express.Response) => {
   try {
@@ -345,6 +341,30 @@ const getProfileByEmail = async (
   }
 };
 
+const getMyInstructor = async (req: express.Request, res: express.Response) => {
+  try {
+    if (!req.user) {
+      return responseHandler.unauthorized(res);
+    }
+
+    const user = req.user;
+
+    if (user.role !== "student") {
+      return responseHandler.badrequest(res, "User is not a student");
+    }
+
+    const instructor = await getUserByPhone(user.instructor_phone);
+    if (!instructor) {
+      return responseHandler.notfound(res);
+    }
+
+    responseHandler.ok(res, instructor);
+  } catch (error) {
+    console.error("Error getting student profile:", error);
+    responseHandler.error(res);
+  }
+};
+
 export default {
   getMyLessons,
   markLessonDone,
@@ -354,4 +374,5 @@ export default {
   undoLesson,
   setupAccount,
   getProfileByEmail,
+  getMyInstructor,
 };
